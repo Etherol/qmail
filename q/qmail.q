@@ -4,16 +4,16 @@
 // ===========================
 // Sendmail wrapper
 // ===========================
-.mail.utilityexists:{not 0b~@[system;"which ",x," 2>/dev/null";{0b}]};
+/.mail.utilityexists:{not 0b~@[system;"which ",x," 2>/dev/null";{0b}]};
 .mail.checkfile:{if[not x~key x:hsym x;'"file not found: ",.mail.hsym2str x]}
 
 .mail.send:{[frm;to;sub;body;att]
-  if[not .mail.utilityexists "sendmail"; '"'sendmail' not found"];
+  /if[not .mail.utilityexists "sendmail"; '"'sendmail' not found"];
   if[not att~"";if[10h=type att;att:enlist att]];
   fn:hsym`$first system"mktemp /tmp/qmail.XXXXXXXXXX";
   mail:.mail.template[frm;to;sub;body;att];
   fn 0: mail;
-  @[system;"sendmail -t < ",1_string fn;{[x;y]hdel y;'"qmail error"}[;fn]];
+  @[system;"/usr/lib/sm.bin/sendmail -t < ",1_string fn;{[x;y]hdel y;'"qmail error"}[;fn]];
   hdel fn;
   };
 
@@ -247,4 +247,22 @@
   enlist[`$"background-color"]!enlist "#ffffff"
   };
 
-.mail.dict2css:{";"sv":"sv'flip(string@key@;value)@\:x}
+.mail.dict2css:{";"sv":"sv'flip(string@key@;value)@\:x};
+
+qmail_tbls:{[tbls;headings;to;subj;frm]
+ add:{[body;x]body:body,$[0h=type x;x;enlist x];body};
+ if[98h=type tbls;tbls:enlist tbls];
+ if[10h=type headings;headings:enlist headings];
+ body:"";
+ cntTbls:count tbls;cntHead:count headings;
+ i_tbl:0;i_head:0;
+ while[(i_tbl<cntTbls)|i_head<cntHead;
+  if[i_head<cntHead;
+     body:add[body;] .mail.heading["3";headings[i_head]];
+     i_head:i_head+1];
+  if[i_tbl<cntTbls;
+     body:add[body;] .mail.table[tbls[i_tbl]];
+     i_tbl:i_tbl+1]];
+ body:add[body;] .mail.size["18";"<br>See you,<br><br>"];
+ body:add[body;] .mail.size["18";frm];
+ .mail.send[frm;to;subj;body;`]};
